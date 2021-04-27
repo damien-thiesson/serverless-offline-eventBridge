@@ -237,15 +237,15 @@ class ServerlessOfflineAwsEventbridgePlugin {
 
         const flattenedDetailObject = this.flattenObject(detail);
         const flattenedPatternDetailObject = this.flattenObject(
-            subscriber.event.pattern.detail
+          subscriber.event.pattern.detail
         );
 
         // check for existence of every value in the pattern in the provided value
         for (const [key, value] of Object.entries(
-            flattenedPatternDetailObject
+          flattenedPatternDetailObject
         )) {
           subscribedChecks.push(
-              this.verifyIfValueMatchesEventBridgePatterns(flattenedDetailObject, key, value)
+            this.verifyIfValueMatchesEventBridgePatterns(flattenedDetailObject, key, value)
           );
         }
       }
@@ -253,7 +253,7 @@ class ServerlessOfflineAwsEventbridgePlugin {
 
     const subscribed = subscribedChecks.every((x) => x);
     this.log(
-        `${subscriber.functionKey} ${subscribed ? "is" : "is not"} subscribed`
+      `${subscriber.functionKey} ${subscribed ? "is" : "is not"} subscribed`
     );
     return subscribed;
   }
