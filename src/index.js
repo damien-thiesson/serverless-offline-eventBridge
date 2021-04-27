@@ -215,20 +215,20 @@ class ServerlessOfflineAwsEventbridgePlugin {
 
     if (subscriber.event.eventBus && entry.EventBusName) {
       subscribedChecks.push(
-        this.compareEventBusName(subscriber.event.eventBus, entry.EventBusName)
+          this.compareEventBusName(subscriber.event.eventBus, entry.EventBusName)
       );
     }
 
     if (subscriber.event.pattern) {
       if (subscriber.event.pattern.source) {
         subscribedChecks.push(
-          subscriber.event.pattern.source.includes(entry.Source)
+            this.verifyIfValueMatchesEventBridgePatterns(subscriber.event.pattern, "source", entry.Source)
         );
       }
 
       if (entry.DetailType && subscriber.event.pattern["detail-type"]) {
         subscribedChecks.push(
-          subscriber.event.pattern["detail-type"].includes(entry.DetailType)
+            this.verifyIfValueMatchesEventBridgePatterns(subscriber.event.pattern, "detail-type", entry.DetailType)
         );
       }
 
@@ -237,17 +237,15 @@ class ServerlessOfflineAwsEventbridgePlugin {
 
         const flattenedDetailObject = this.flattenObject(detail);
         const flattenedPatternDetailObject = this.flattenObject(
-          subscriber.event.pattern.detail
+            subscriber.event.pattern.detail
         );
 
         // check for existence of every value in the pattern in the provided value
         for (const [key, value] of Object.entries(
-          flattenedPatternDetailObject
+            flattenedPatternDetailObject
         )) {
           subscribedChecks.push(
-            flattenedDetailObject[key]
-              ? value.includes(flattenedDetailObject[key])
-              : false
+              this.verifyIfValueMatchesEventBridgePatterns(flattenedDetailObject, key, value)
           );
         }
       }
@@ -255,9 +253,74 @@ class ServerlessOfflineAwsEventbridgePlugin {
 
     const subscribed = subscribedChecks.every((x) => x);
     this.log(
-      `${subscriber.functionKey} ${subscribed ? "is" : "is not"} subscribed`
+        `${subscriber.functionKey} ${subscribed ? "is" : "is not"} subscribed`
     );
     return subscribed;
+  }
+
+  verifyIfValueMatchesEventBridgePatterns(object, field, patterns) {
+    if (!object) {
+      return false;
+    }
+
+    // If the filter is just a scalar value, directly compare this value
+    if (!Array.isArray(patterns)) {
+      return this.verifyIfValueMatchesEventBridgePattern(object, field, patterns);
+    }
+
+    for (const pattern of patterns) {
+      if (this.verifyIfValueMatchesEventBridgePattern(object, field, pattern)) {
+        return true; // Return true as soon as a pattern matches the content
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Implementation of content-based filtering specific to Eventbridge event patterns
+   * https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns-content-based-filtering.html
+   */
+  verifyIfValueMatchesEventBridgePattern(object, field, pattern) {
+
+    // Simple scalar comparison
+    if (typeof pattern !== "object") {
+      if (!object[field]) {
+        return false // Scalar vs non-existing field => false
+      }
+      if (Array.isArray(object[field])) {
+        for (const scalarValue of object[field]) {
+          if (scalarValue === pattern) {
+            return true
+          }
+        }
+        return false
+      }
+      return object[field] === pattern;
+    }
+
+    // "exists" filters
+    if ("exists" in pattern) {
+      return pattern.exists ? field in object : !(field in object);
+    }
+
+    // At this point, result is assumed false is the field does not actually exists
+    if (!(field in object)) {
+      return false;
+    }
+
+    const content = object[field];
+    const filterType = Object.keys(pattern)[0];
+
+    if (filterType === "prefix") {
+      return content.startsWith(pattern.prefix);
+    }
+
+    // "numeric", "anything-but", "cidr" filters and the recurring logic are yet supported by this plugin.
+    throw new Error(
+        `The ${filterType} eventBridge filter is not supported in serverless-offline-aws-eventBridge yet. ` +
+        `Please consider submitting a PR to support it.`
+    );
   }
 
   compareEventBusName(eventBus, eventBusName) {
