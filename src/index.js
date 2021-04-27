@@ -282,19 +282,13 @@ class ServerlessOfflineAwsEventbridgePlugin {
    * https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns-content-based-filtering.html
    */
   verifyIfValueMatchesEventBridgePattern(object, field, pattern) {
-
     // Simple scalar comparison
     if (typeof pattern !== "object") {
       if (!object[field]) {
-        return false // Scalar vs non-existing field => false
+        return false; // Scalar vs non-existing field => false
       }
       if (Array.isArray(object[field])) {
-        for (const scalarValue of object[field]) {
-          if (scalarValue === pattern) {
-            return true
-          }
-        }
-        return false
+        return object[field].includes(pattern);
       }
       return object[field] === pattern;
     }
@@ -318,7 +312,7 @@ class ServerlessOfflineAwsEventbridgePlugin {
 
     // "numeric", "anything-but", "cidr" filters and the recurring logic are yet supported by this plugin.
     throw new Error(
-        `The ${filterType} eventBridge filter is not supported in serverless-offline-aws-eventBridge yet. ` +
+      `The ${filterType} eventBridge filter is not supported in serverless-offline-aws-eventBridge yet. ` +
         `Please consider submitting a PR to support it.`
     );
   }
