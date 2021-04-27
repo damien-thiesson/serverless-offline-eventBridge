@@ -215,20 +215,20 @@ class ServerlessOfflineAwsEventbridgePlugin {
 
     if (subscriber.event.eventBus && entry.EventBusName) {
       subscribedChecks.push(
-          this.compareEventBusName(subscriber.event.eventBus, entry.EventBusName)
+        this.compareEventBusName(subscriber.event.eventBus, entry.EventBusName)
       );
     }
 
     if (subscriber.event.pattern) {
       if (subscriber.event.pattern.source) {
         subscribedChecks.push(
-            this.verifyIfValueMatchesEventBridgePatterns(subscriber.event.pattern, "source", entry.Source)
+          this.verifyIfValueMatchesEventBridgePatterns(subscriber.event.pattern, "source", entry.Source)
         );
       }
 
       if (entry.DetailType && subscriber.event.pattern["detail-type"]) {
         subscribedChecks.push(
-            this.verifyIfValueMatchesEventBridgePatterns(subscriber.event.pattern, "detail-type", entry.DetailType)
+          this.verifyIfValueMatchesEventBridgePatterns(subscriber.event.pattern, "detail-type", entry.DetailType)
         );
       }
 
