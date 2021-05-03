@@ -56,7 +56,10 @@ class ServerlessOfflineAwsEventbridgePlugin {
       this.serverless.service.custom["serverless-offline-aws-eventbridge"] ||
       {};
     this.port = this.config.port || 4010;
-    this.mockEventBridgeServer = "mockEventBridgeServer" in this.config ? this.config.mockEventBridgeServer : true;
+    this.mockEventBridgeServer =
+      "mockEventBridgeServer" in this.config
+        ? this.config.mockEventBridgeServer
+        : true;
     this.pubSubPort = this.config.pubSubPort || 4011;
     this.account = this.config.account || "";
     this.region = this.serverless.service.provider.region || "us-east-1";
@@ -222,13 +225,21 @@ class ServerlessOfflineAwsEventbridgePlugin {
     if (subscriber.event.pattern) {
       if (subscriber.event.pattern.source) {
         subscribedChecks.push(
-          this.verifyIfValueMatchesEventBridgePatterns(subscriber.event.pattern, "source", entry.Source)
+          this.verifyIfValueMatchesEventBridgePatterns(
+            entry,
+            "Source",
+            subscriber.event.pattern.source
+          )
         );
       }
 
       if (entry.DetailType && subscriber.event.pattern["detail-type"]) {
         subscribedChecks.push(
-          this.verifyIfValueMatchesEventBridgePatterns(subscriber.event.pattern, "detail-type", entry.DetailType)
+          this.verifyIfValueMatchesEventBridgePatterns(
+            entry,
+            "DetailType",
+            subscriber.event.pattern["detail-type"]
+          )
         );
       }
 
@@ -245,7 +256,11 @@ class ServerlessOfflineAwsEventbridgePlugin {
           flattenedPatternDetailObject
         )) {
           subscribedChecks.push(
-            this.verifyIfValueMatchesEventBridgePatterns(flattenedDetailObject, key, value)
+            this.verifyIfValueMatchesEventBridgePatterns(
+              flattenedDetailObject,
+              key,
+              value
+            )
           );
         }
       }
@@ -263,12 +278,12 @@ class ServerlessOfflineAwsEventbridgePlugin {
       return false;
     }
 
-    // If the filter is just a scalar value, directly compare this value
-    if (!Array.isArray(patterns)) {
-      return this.verifyIfValueMatchesEventBridgePattern(object, field, patterns);
+    let matchPatterns = patterns;
+    if (!Array.isArray(matchPatterns)) {
+      matchPatterns = [matchPatterns];
     }
 
-    for (const pattern of patterns) {
+    for (const pattern of matchPatterns) {
       if (this.verifyIfValueMatchesEventBridgePattern(object, field, pattern)) {
         return true; // Return true as soon as a pattern matches the content
       }
