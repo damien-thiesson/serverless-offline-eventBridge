@@ -317,7 +317,7 @@ class ServerlessOfflineAwsEventbridgePlugin {
   verifyIfValueMatchesEventBridgePattern(object, field, pattern) {
     // Simple scalar comparison
     if (typeof pattern !== "object") {
-      if (!object[field]) {
+      if (!(field in object)) {
         return false; // Scalar vs non-existing field => false
       }
       if (Array.isArray(object[field])) {
